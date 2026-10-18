@@ -1,0 +1,22 @@
+# Secrets (only the blank template belongs in Git)
+.env
+.env.*
+!.env.example
+
+# Runtime data: calibration, arming state, episode database, logs
+/data/**
+!/data/.gitkeep
+*.sqlite*
+
+# Development and generated artifacts
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.DS_Store
+.playwright-mcp/

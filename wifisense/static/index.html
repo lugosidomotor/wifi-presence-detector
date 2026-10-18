@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>WiFi jelenlét</title>
+  <link rel="icon" href="/static/wifi.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="importmap">
+    { "imports": { "three": "/static/vendor/three/three.module.js", "three/addons/": "/static/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <div class="environment" aria-hidden="true"></div>
+
+  <main class="window">
+    <header class="top">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M2 8.8a15 15 0 0 1 20 0"/><path d="M5.2 12.2a10.5 10.5 0 0 1 13.6 0"/><path d="M8.5 15.6a6 6 0 0 1 7 0"/><circle cx="12" cy="19" r="1.2"/></svg>
+        </span>
+        <div>
+          <h1>WiFi jelenlét</h1>
+          <p class="muted" id="subtitle">Kapcsolódás…</p>
+        </div>
+      </div>
+      <div class="top-tools">
+        <span class="pill" id="mode-pill" hidden>Szimuláció</span>
+        <button class="arm" id="arm" type="button" aria-pressed="false" disabled>
+          <span class="arm-dot" aria-hidden="true"></span>
+          <span id="arm-label">Hatástalanítva</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="banner" id="banner" role="status" hidden></div>
+
+    <section class="grid">
+      <article class="card scene-card" aria-labelledby="scene-title">
+        <div class="card-head">
+          <div>
+            <h2 id="scene-title">Tér</h2>
+            <p class="muted small" id="scene-hint">A linkek Fresnel-zónája világít, ha valaki megzavarja a jelet.</p>
+          </div>
+          <div class="segmented" role="group" aria-label="Nézet">
+            <button type="button" data-view="3d" aria-pressed="true">3D</button>
+            <button type="button" data-view="top" aria-pressed="false">Felülről</button>
+          </div>
+        </div>
+        <div class="scene" id="scene">
+          <p class="scene-fallback" id="scene-fallback" hidden>A 3D nézethez WebGL kell; az érzékelés enélkül is fut.</p>
+          <div class="scene-legend" aria-hidden="true">
+            <span><i class="sw idle"></i>nyugodt link</span>
+            <span><i class="sw active"></i>megzavart link</span>
+            <span><i class="sw heat"></i>valószínű hely</span>
+            <span class="truth-key" hidden><i class="sw truth"></i>valós hely (szimuláció)</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card state-card" id="state-card" data-state="learning" aria-live="polite">
+        <p class="label">Állapot</p>
+        <h2 class="state" id="state">Tanulás</h2>
+        <p class="state-sub muted" id="state-sub">Alapvonal felvétele…</p>
+        <div class="meters">
+          <div class="ring" id="human-ring" role="img" aria-label="Ember valószínűsége">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring-track" cx="60" cy="60" r="50"/>
+              <circle class="ring-value" id="human-arc" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="0 100"/>
+            </svg>
+            <div class="ring-text"><strong id="human-value">0%</strong><span>ember</span></div>
+          </div>
+          <div class="bars">
+            <div class="meter">
+              <div class="meter-head"><span>Mozgás</span><strong id="motion-value">0,0×</strong></div>
+              <div class="meter-track"><span class="meter-fill" id="motion-fill"></span><span class="meter-mark" title="küszöb"></span></div>
+            </div>
+            <div class="meter">
+              <div class="meter-head"><span>Szintváltozás</span><strong id="presence-value">0,0×</strong></div>
+              <div class="meter-track"><span class="meter-fill" id="presence-fill"></span><span class="meter-mark" title="küszöb"></span></div>
+            </div>
+            <p class="faint small">1,0× = riasztási küszöb az üres szobához képest</p>
+          </div>
+        </div>
+        <p class="arming muted small" id="arming-text">Riasztás kikapcsolva. Az események így is naplózódnak.</p>
+      </article>
+
+      <article class="card links-card" aria-labelledby="links-title">
+        <div class="card-head"><h2 id="links-title">Linkek</h2><span class="muted small" id="links-count"></span></div>
+        <ul class="links" id="links"></ul>
+      </article>
+
+      <article class="card chart-card" aria-labelledby="chart-title">
+        <div class="card-head">
+          <h2 id="chart-title">Élő jel</h2>
+          <div class="chart-legend" id="chart-legend"></div>
+        </div>
+        <canvas id="chart" height="300" role="img" aria-label="Mozgásszint és jelerősség az utolsó két percben"></canvas>
+      </article>
+
+      <article class="card events-card" aria-labelledby="events-title">
+        <div class="card-head"><h2 id="events-title">Események</h2><span class="muted small" id="events-today"></span></div>
+        <ul class="events" id="events"><li class="empty muted">Még nincs esemény.</li></ul>
+      </article>
+
+      <div class="side">
+        <article class="card sim-card" id="sim-card" hidden aria-labelledby="sim-title">
+          <div class="card-head"><h2 id="sim-title">Demó vezérlő</h2><span class="pill small" id="sim-scene">auto</span></div>
+          <p class="muted small">Szimulált szoba: próbáld ki, mire mit lép az érzékelő.</p>
+          <div class="sim-buttons">
+            <button type="button" class="round small" data-sim="enter">Valaki belép</button>
+            <button type="button" class="round small" data-sim="walk">Járkál</button>
+            <button type="button" class="round small" data-sim="still">Mozdulatlan</button>
+            <button type="button" class="round small" data-sim="leave">Kimegy</button>
+            <button type="button" class="round small" data-sim="fan" aria-pressed="false">Ventilátor</button>
+            <button type="button" class="round small" data-sim="cat" aria-pressed="false">Macska</button>
+            <button type="button" class="round small" data-sim="auto">Automatikus</button>
+          </div>
+        </article>
+
+        <article class="card calib-card" aria-labelledby="calib-title">
+          <div class="card-head"><h2 id="calib-title">Kalibrálás</h2><span class="pill small" id="calib-pill">automatikus</span></div>
+          <p class="muted small" id="calib-text">Hagyd el a szobát, és indítsd el: az üres szoba jelét veszi fel alapvonalnak.</p>
+          <div class="progress" id="calib-progress" hidden><span id="calib-bar"></span></div>
+          <div class="row-buttons">
+            <button type="button" class="round small" id="calibrate">Kalibrálás indítása</button>
+            <button type="button" class="round small" id="calibrate-cancel" hidden>Mégse</button>
+          </div>
+        </article>
+
+        <article class="card settings-card" aria-labelledby="settings-title">
+          <div class="card-head"><h2 id="settings-title">Riasztás</h2></div>
+          <dl class="facts" id="facts"></dl>
+          <div class="row-buttons">
+            <button type="button" class="round small" id="notify-test">Teszt értesítés</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <p class="footnote faint small">A WiFi nem lát: a jel ingadozásából következtet. Járó embert jól érzékel, mozdulatlant csak CSI-vel és korlátozottan; nagy háziállat összetéveszthető emberrel.</p>
+  </main>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+name: wifi-sense
+
+services:
+  wifi:
+    image: wifi-sense:local
+    build:
+      context: .
+      target: runtime
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    restart: unless-stopped
+    init: true
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      WIFI_DATA_DIR: /data
+      # Host networking has no port mapping: this is the address Uvicorn listens on. LAN/tailnet: 0.0.0.0.
+      WIFI_WEB_HOST: ${WIFI_WEB_HOST:-127.0.0.1}
+    # The host's wlan0 (/proc/net/wireless) and UDP from ESP32 boards are only visible in the host network.
+    network_mode: host
+    volumes:
+      - ./data:/data
+      - ./config.yaml:/app/config.yaml:ro
+    stop_grace_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # ESP32 over USB: pass the serial port through and join the dialout group.
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    # group_add:
+    #   - dialout

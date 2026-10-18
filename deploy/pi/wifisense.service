@@ -1,0 +1,19 @@
+# Native (no Docker) user service:
+#   cp deploy/pi/wifisense.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now wifisense
+#   sudo loginctl enable-linger "$USER"   # start at boot without a login
+[Unit]
+Description=WiFi Sense: WiFi motion and presence alarm
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/wifi-sense
+ExecStart=%h/wifi-sense/.venv/bin/python -m wifisense.main --config %h/wifi-sense/config.yaml
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+[Install]
+WantedBy=default.target

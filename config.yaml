@@ -1,0 +1,33 @@
+# defaults < this YAML < environment. Credentials and integrations are environment-only (.env).
+#
+# Coordinates in metres, origin at a floor corner of the room:
+#   x = along the width, y = height above the floor, z = along the depth.
+# Measure where the router and the sensors stand; ±20 cm is plenty.
+room: {width: 5.0, depth: 4.0, height: 2.6}
+
+nodes:
+  - {id: router, name: Router, kind: ap, position: [0.4, 1.8, 0.4]}
+  - {id: pi, name: Raspberry Pi, kind: sensor, position: [4.5, 1.0, 3.5]}
+  # - {id: esp-door, name: ESP32 · ajtó, kind: sensor, position: [0.4, 1.0, 3.6]}
+
+# A link is a transmitter → receiver pair whose signal a body can disturb. The most sensitive area is the
+# straight line between them (the Fresnel zone): put the room's walkway across it.
+links:
+  # The Pi's own WiFi connection to the router: no extra hardware, sees movement near the line.
+  - {id: pi-router, name: Pi ↔ router, source: rssi, tx: router, rx: pi}
+  # ESP32 with Espressif esp-csi firmware (csi_recv_router) on USB: far more sensitive, sees still people
+  # standing in the link. One of serial or udp_port; mac filters to the router's frames.
+  # - {id: door-router, name: Ajtó ↔ router, source: esp32, tx: router, rx: esp-door, serial: /dev/ttyUSB0}
+  # - {id: door-router, name: Ajtó ↔ router, source: esp32, tx: router, rx: esp-door, udp_port: 5566, ghz: 2.4}
+
+detection:
+  motion_threshold: 4.0
+  presence_threshold: 5.0
+  trigger_seconds: 1.0
+  hold_seconds: 45
+  human_threshold: 0.6
+
+alarm:
+  trigger: human
+  arm_delay_seconds: 60
+  cooldown_seconds: 120
