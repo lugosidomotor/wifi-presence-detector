@@ -7,9 +7,31 @@ konvenciókat követi (defaults → YAML → env, ntfy, SQLite, FastAPI, magyar 
 
 > *English: WiFi-based motion and human-presence alarm for the Raspberry Pi. It watches how people
 > disturb WiFi links (the Pi's own RSSI, optionally ESP32 CSI), learns the empty room, and raises an
-> ntfy/webhook alarm when armed. A 3D view shows the links, their Fresnel zones and the likely location.*
+> ntfy/webhook alarm when armed. A 3D view shows the links, their Fresnel zones and the likely location.
+> The UI and docs are in Hungarian. **Try the live demo in your browser, no install needed.***
 
-![A webes felület riasztás közben, szimulált szobában](docs/dashboard.png)
+## ▶ Próbáld ki: élő demó, telepítés nélkül
+
+**[Demó megnyitása a böngészőben →](https://lugosidomotor.github.io/wifi-presence-detector/)**
+
+[![A demó riasztás közben: 3D tér a linkekkel és a becsült hellyel, állapot, linkek](docs/dashboard.png)](https://lugosidomotor.github.io/wifi-presence-detector/)
+
+A demó a **valódi webes felület** változatlan kódja (`wifisense/static`). A szobát, a WiFi-linkeket
+(egy RSSI és két ESP32 CSI) és a teljes felismerést a böngésző szimulálja; nincs szükség Pi-re,
+szerverre vagy ESP32-re. Kalibrált, üres szobával indul, és pár másodperc múlva magától belép valaki.
+
+- **Demó vezérlő kártya** (a felület része): a szimulált ember belép, járkál, mozdulatlanul ül,
+  kimegy; ventilátor és macska kapcsolható. A 3D nézetben a szaggatott alak a valós hely, a piros
+  a becslés.
+- **Jobb alsó Demó · vezérlő gomb:** élesített forgatókönyvek (betörő belép → riasztás; csak a
+  macska vagy csak a ventilátor → nincs riasztás; mozdulatlan ember), hibahelyzetek (az ajtónál
+  lévő ESP32 kiesik, energiatakarékos WiFi a Pi-n, minden link kiesik) és alaphelyzet.
+- A kilépési késleltetés a demóban 15 mp (élesben alapból 60).
+
+Offline is működik: töltsd le a [`demo/wifi-presence-demo.html`](demo/wifi-presence-demo.html)
+fájlt, és nyisd meg duplakattintással. A demó a felület kódjából készül
+(`python tools/build_demo.py`), a jelfeldolgozás a `tools/demo/mock.js`-ben a Python-modulok
+böngészős megfelelője; a CI ellenőrzi, hogy a demó naprakész-e.
 
 ## Mit tud
 
@@ -56,18 +78,16 @@ WiFi-riasztás + a kamera megerősítése (lásd [Integráció](#integráció-a-
 3. *(Haladó, nincs beépítve)* A Pi 4 saját chipjéből a [nexmon_csi](https://github.com/seemoo-lab/nexmon_csi)
    is ad CSI-t, de monitor módba teszi a WiFit (a Pi-nek Ethernet kell), és kernelfüggő.
 
-## Gyors kipróbálás (demó, bármilyen gépen)
+## Helyi demó a Python-szolgáltatással (bármilyen gépen, Macen is)
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m wifisense.main --demo
 ```
 
-UI: **http://127.0.0.1:8010**. A `--demo` beépített 6 × 4,5 m-es szobát használ egy RSSI- és két CSI-linkkel,
-szimulált jelekkel. Kb. 30 mp után valaki belép, járkál, leül, kimegy; a **Demó vezérlő** gombjaival
-magad is irányíthatod (belép, járkál, mozdulatlan, kimegy, ventilátor, macska). A 3D nézetben a
-szaggatott alak a szimulált ember valós helye, a piros a becslés. A demó adatai külön kalibrációs
-fájlba kerülnek, a valódi telepítést nem zavarják.
+UI: **http://127.0.0.1:8010**. Ugyanaz a szoba, mint a böngészős demóban, de itt a valódi szolgáltatás
+fut (szálak, SQLite, API), csak a jelforrás szimulált. Kb. 20 mp-ig tanulja az üres szobát, kb. 30 mp
+után valaki belép. A demó adatai külön kalibrációs fájlba kerülnek, a valódi telepítést nem zavarják.
 
 ## Telepítés Raspberry Pi-re
 
@@ -191,6 +211,7 @@ Tervezett lépések a `pi_camera` projektbe olvasztáshoz:
 .venv/bin/pip install -r requirements.txt pytest httpx ruff
 .venv/bin/python -m pytest -q      # hardver nélkül: virtuális idős szimulátor
 .venv/bin/ruff check .
+python3 tools/build_demo.py        # a felület változása után a böngészős demót is újra kell építeni
 docker build --target test -t wifi-sense:test . && docker run --rm wifi-sense:test
 ```
 
@@ -213,4 +234,8 @@ wifisense/
 ├── settings.py     # élesítés, tartósan
 ├── web.py          # FastAPI + SSE
 └── static/         # UI, 3D nézet (three.js, helyben), Manrope betűtípus (OFL)
+tools/
+├── build_demo.py   # önálló demóoldal a változatlan UI-ból
+└── demo/           # mock.js (szimuláció + felismerés a böngészőben), loader.js, demo.css
+demo/               # wifi-presence-demo.html (generált, egy fájl)
 ```

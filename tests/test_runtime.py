@@ -137,3 +137,17 @@ def test_shutdown_closes_the_open_episode(harness):
     event = rt.store.list_events()[0]
     store_close()
     assert event["state"] == "closed" and event["end_reason"] == "shutdown" and event["duration_seconds"] > 5
+
+
+def test_rearming_during_an_alarmed_episode_starts_clean(harness):
+    harness.run(5)
+    harness.calibrate(30)
+    harness.rt.settings.arm_delay = 0
+    harness.rt.arm(True)
+    harness.rt.sim.action("enter")
+    assert harness.run(15)["alarm"] is True
+    harness.rt.arm(False)
+    harness.rt.sim.action("leave")
+    assert harness.run(10)["alarm"] is False
+    harness.rt.arm(True)  # still within the same episode's hold time, nobody moving
+    assert harness.run(5)["alarm"] is False

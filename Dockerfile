@@ -22,9 +22,11 @@ CMD ["python", "-m", "wifisense.main", "--config", "/app/config.yaml"]
 
 FROM base AS test
 USER root
-RUN python -m pip install 'pytest==9.1.1' 'httpx==0.28.1'
+RUN python -m pip install 'pytest==9.1.1' 'httpx==0.28.1' 'ruff==0.15.6'
 COPY --chown=wifi:wifi pyproject.toml ./
 COPY --chown=wifi:wifi tests ./tests
+COPY --chown=wifi:wifi tools ./tools
+COPY --chown=wifi:wifi demo ./demo
 USER wifi
 CMD ["python", "-m", "pytest", "-q"]
 

@@ -211,6 +211,8 @@ class Runtime:
             self._open_event(started, arming)
         episode = self.tracker.episode
         if episode is not None:
+            if not arming["armed"]:
+                episode["alarm"] = False  # disarming acknowledges it; re-arming needs fresh activity to alarm again
             for link_id, s in valid.items():
                 episode["links"][link_id] = round(max(episode["links"].get(link_id, 0.0), s["motion"]), 2)
             if position is not None and motion >= episode.get("position_motion", 0):
